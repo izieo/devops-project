@@ -6,7 +6,6 @@ pipeline {
   }
 
   environment {
-    DOCKER_HOST = "tcp://172.18.0.2:2375"
     ACR_NAME = 'izieomodevopsacr'
     IMAGE_TAG = 'latest'
     RESOURCE_GROUP = 'devops-rg'
@@ -18,12 +17,24 @@ pipeline {
   }
 
   stages {
-    stage('Azure Login & ACR Login') {
+    stage('Azure Login & ACR Token Login') {
       steps {
-        sh '''
-          az login --service-principal -u $AZ_CLIENT_ID -p $AZ_CLIENT_SECRET --tenant $AZ_TENANT_ID
-          az acr login --name $ACR_NAME
-        '''
+        script {
+          sh '''
+            az login --service-principal -u $AZ_CLIENT_ID -p $AZ_CLIENT_SECRET --tenant $AZ_TENANT_ID
+          '''
+
+          def token = sh(
+            script: "az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken",
+            returnStdout: true
+          ).trim()
+
+          sh """
+            echo $token | docker login ${ACR_NAME}.azurecr.io \
+              --username 00000000-0000-0000-0000-000000000000 \
+              --password-stdin
+          """
+        }
       }
     }
 
