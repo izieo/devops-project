@@ -6,10 +6,10 @@ pipeline {
   }
 
   environment {
-    ACR_NAME = 'izieomodevopsacr'
-    IMAGE_TAG = 'latest'
-    RESOURCE_GROUP = 'devops-rg'
-    CLUSTER_NAME = 'devops-aks'
+    ACR_NAME        = 'izieomodevopsacr'
+    IMAGE_TAG       = 'latest'
+    RESOURCE_GROUP  = 'devops-rg'
+    CLUSTER_NAME    = 'devops-aks'
 
     AZ_CLIENT_ID     = credentials('AZURE_CLIENT_ID')
     AZ_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
@@ -50,6 +50,12 @@ pipeline {
             """
           }
         }
+      }
+    }
+
+    stage('Grant ACR Pull Permission to AKS') {
+      steps {
+        sh 'az aks update -n $CLUSTER_NAME -g $RESOURCE_GROUP --attach-acr $ACR_NAME'
       }
     }
 
