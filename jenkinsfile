@@ -1,7 +1,9 @@
 pipeline {
-  agent {
-    label 'docker-agent-azure'
-  }
+  agent { 
+    node {
+      label 'docker-agent-python'
+            }
+      }
 
   environment {
     ACR_NAME         = "izieomodevopsacr"
