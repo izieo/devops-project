@@ -1,0 +1,57 @@
+pipeline {
+  agent { 
+    node {
+      label 'docker-agent-azure'
+            }
+      }
+
+  environment {
+    ACR_NAME         = "izieomodevopsacr"
+    RESOURCE_GROUP   = "devops-rg"
+    CLUSTER_NAME     = "devops-aks"
+    IMAGE_TAG        = "latest"
+
+    AZ_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
+    AZ_CLIENT_ID       = credentials('AZURE_CLIENT_ID')
+    AZ_CLIENT_SECRET   = credentials('AZURE_CLIENT_SECRET')
+    AZ_TENANT_ID       = credentials('AZURE_TENANT_ID')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Terraform Init & Apply') {
+      steps {
+        dir('terraform') {
+          withEnv([
+          "TF_VAR_subscription_id=${AZ_SUBSCRIPTION_ID}",
+          "TF_VAR_client_id=${AZ_CLIENT_ID}",
+          "TF_VAR_client_secret=${AZ_CLIENT_SECRET}",
+          "TF_VAR_tenant_id=${AZ_TENANT_ID}",
+          "ARM_CLIENT_ID=${AZ_CLIENT_ID}",
+          "ARM_CLIENT_SECRET=${AZ_CLIENT_SECRET}",
+          "ARM_SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}",
+          "ARM_TENANT_ID=${AZ_TENANT_ID}"
+         ])
+      {
+            sh 'terraform init'
+            sh 'terraform apply -auto-approve'
+          }
+        }
+      }
+    }
+
+  post {
+    success {
+      echo "✅ CI/CD pipeline completed!"
+    }
+    failure {
+      echo "❌ Something went wrong during the pipeline."
+    }
+  }
+}
+}
