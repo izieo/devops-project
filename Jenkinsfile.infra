@@ -23,6 +23,7 @@ pipeline {
         checkout scm
       }
     }
+  }
 
     stage('Terraform Init & Apply') {
       steps {
@@ -53,5 +54,4 @@ pipeline {
       echo "❌ Something went wrong during the pipeline."
     }
   }
-}
 }
