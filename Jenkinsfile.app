@@ -6,11 +6,12 @@ pipeline {
   }
 
   environment {
+    DOCKER_HOST = "tcp://172.18.0.2:2375"
     ACR_NAME = 'izieomodevopsacr'
     IMAGE_TAG = 'latest'
     RESOURCE_GROUP = 'devops-rg'
     CLUSTER_NAME = 'devops-aks'
-    
+
     AZ_CLIENT_ID     = credentials('AZURE_CLIENT_ID')
     AZ_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
     AZ_TENANT_ID     = credentials('AZURE_TENANT_ID')
