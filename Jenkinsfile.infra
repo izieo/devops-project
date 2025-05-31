@@ -23,7 +23,7 @@ pipeline {
         checkout scm
       }
     }
-  }
+  
 
     stage('Terraform Init & Apply') {
       steps {
@@ -45,6 +45,7 @@ pipeline {
         }
       }
     }
+  }
 
   post {
     success {
