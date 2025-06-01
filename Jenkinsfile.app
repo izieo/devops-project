@@ -6,10 +6,10 @@ pipeline {
   }
 
   environment {
-    ACR_NAME        = 'izieomodevopsacr'
-    IMAGE_TAG       = 'latest'
-    RESOURCE_GROUP  = 'devops-rg'
-    CLUSTER_NAME    = 'devops-aks'
+    ACR_NAME = 'izieomodevopsacr'
+    IMAGE_TAG = 'latest'
+    RESOURCE_GROUP = 'devops-rg'
+    CLUSTER_NAME = 'devops-aks'
 
     AZ_CLIENT_ID     = credentials('AZURE_CLIENT_ID')
     AZ_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
@@ -23,12 +23,7 @@ pipeline {
           sh '''
             az login --service-principal -u $AZ_CLIENT_ID -p $AZ_CLIENT_SECRET --tenant $AZ_TENANT_ID
           '''
-
-          def token = sh(
-            script: "az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken",
-            returnStdout: true
-          ).trim()
-
+          def token = sh(script: "az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken", returnStdout: true).trim()
           sh """
             echo $token | docker login ${ACR_NAME}.azurecr.io \
               --username 00000000-0000-0000-0000-000000000000 \
@@ -53,21 +48,26 @@ pipeline {
       }
     }
 
-    stage('Grant ACR Pull Permission to AKS') {
+    stage('Set Up kubeconfig') {
       steps {
-        sh 'az aks update -n $CLUSTER_NAME -g $RESOURCE_GROUP --attach-acr $ACR_NAME'
-      }
-    }
-
-    stage('Get AKS Credentials') {
-      steps {
-        sh 'az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --overwrite-existing'
+        script {
+          sh '''
+            terraform output -raw kube_config > ./azurek8s
+            # Clean EOT markers if any
+            sed -i '/^<<EOT$/d;/^EOT$/d' ./azurek8s
+            export KUBECONFIG=$PWD/azurek8s
+            kubectl config current-context
+          '''
+        }
       }
     }
 
     stage('Deploy to AKS') {
       steps {
-        sh 'kubectl apply -f k8s/'
+        sh '''
+          export KUBECONFIG=$PWD/azurek8s
+          kubectl apply -f k8s/
+        '''
       }
     }
   }
@@ -77,7 +77,7 @@ pipeline {
       echo "✅ CI/CD pipeline completed!"
     }
     failure {
-      echo "❌ Something went wrong during the pipeline."
+      echo "❌ Pipeline failed. Check logs for details."
     }
   }
 }
