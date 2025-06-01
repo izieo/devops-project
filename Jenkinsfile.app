@@ -51,33 +51,40 @@ pipeline {
     stage('Set Up kubeconfig') {
       steps {
         script {
-          sh '''
-            terraform output -raw kube_config > ./azurek8s
-            # Clean EOT markers if any
-            sed -i '/^<<EOT$/d;/^EOT$/d' ./azurek8s
-            export KUBECONFIG=$PWD/azurek8s
-            kubectl config current-context
-          '''
+          def kubeConfigRaw = sh(
+            script: 'terraform output -raw kube_config',
+            returnStdout: true
+          ).trim()
+
+          // Remove potential EOT markers
+          kubeConfigRaw = kubeConfigRaw
+            .replaceAll('(?m)^<<EOT$', '')
+            .replaceAll('(?m)^EOT$', '')
+
+          writeFile file: 'azurek8s', text: kubeConfigRaw
+          env.KUBECONFIG = "${pwd()}/azurek8s"
+
+          // Optional check
+          sh 'kubectl config current-context'
         }
       }
     }
 
     stage('Deploy to AKS') {
       steps {
-        sh '''
-          export KUBECONFIG=$PWD/azurek8s
-          kubectl apply -f k8s/
-        '''
+        script {
+          sh 'kubectl apply -f k8s/'
+        }
       }
     }
   }
 
   post {
     success {
-      echo "✅ CI/CD pipeline completed!"
+      echo "✅ CI/CD pipeline completed successfully!"
     }
     failure {
-      echo "❌ Pipeline failed. Check logs for details."
+      echo "❌ CI/CD pipeline failed. Check the logs for details."
     }
   }
 }
