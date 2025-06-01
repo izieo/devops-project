@@ -61,6 +61,6 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
 #-------------------------
 
 output "kube_config" {
-  value     = azurerm_kubernetes_cluster.devops-aks.kube_config_raw
+  value     = azurerm_kubernetes_cluster.aks.kube_config_raw
   sensitive = true
 }
