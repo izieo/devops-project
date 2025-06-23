@@ -52,9 +52,11 @@ pipeline {
       steps {
         script {
           sh '''
-            terraform output -json kube_config | jq -r '.' > azurek8s
-            export KUBECONFIG=$PWD/azurek8s
-            kubectl config current-context
+        terraform output -raw kube_config > azurek8s
+        export KUBECONFIG=$PWD/azurek8s
+        echo "[INFO] KUBECONFIG preview:"
+        head -n 10 azurek8s
+        kubectl config current-context
           '''
         }
       }
