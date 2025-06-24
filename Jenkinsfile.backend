@@ -1,7 +1,13 @@
 pipeline {
   agent { label 'docker-agent-azure' }
 
-
+  environment {
+    AZ_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
+    AZ_CLIENT_ID       = credentials('AZURE_CLIENT_ID')
+    AZ_CLIENT_SECRET   = credentials('AZURE_CLIENT_SECRET')
+    AZ_TENANT_ID       = credentials('AZURE_TENANT_ID')
+  }
+  
   stages {
     stage('Checkout') {
       steps {
