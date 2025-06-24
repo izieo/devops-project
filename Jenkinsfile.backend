@@ -1,0 +1,43 @@
+pipeline {
+  agent { label 'docker-agent-azure' }
+
+  environment {
+    AZ_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID')
+    AZ_CLIENT_ID       = credentials('AZURE_CLIENT_ID')
+    AZ_CLIENT_SECRET   = credentials('AZURE_CLIENT_SECRET')
+    AZ_TENANT_ID       = credentials('AZURE_TENANT_ID')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Bootstrap Backend Infra') {
+      steps {
+        dir('terraform-backend') {
+          withEnv([
+            "ARM_CLIENT_ID=${AZ_CLIENT_ID}",
+            "ARM_CLIENT_SECRET=${AZ_CLIENT_SECRET}",
+            "ARM_SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}",
+            "ARM_TENANT_ID=${AZ_TENANT_ID}"
+          ]) {
+            sh 'terraform init'
+            sh 'terraform apply -auto-approve'
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✅ Backend created."
+    }
+    failure {
+      echo "❌ Failed to create backend."
+    }
+  }
+}

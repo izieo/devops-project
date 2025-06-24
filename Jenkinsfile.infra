@@ -49,7 +49,7 @@ pipeline {
 
   post {
     success {
-      echo "✅ CI/CD pipeline completed!"
+      echo "✅ Pipeline completed!"
     }
     failure {
       echo "❌ Something went wrong during the pipeline."
