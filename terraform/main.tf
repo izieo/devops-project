@@ -1,18 +1,16 @@
 #-------------------------
-# Resource Group
+# Existing Resource Group
 #-------------------------
-resource "azurerm_resource_group" "main" {
-  name     = "devops-rg"
-  location = "East US"
+data "azurerm_resource_group" "existing_rg" {
+  name = var.resource_group_name
 }
-
 #-------------------------
 # Azure Container Registry
 #-------------------------
 resource "azurerm_container_registry" "acr" {
   name                = "izieomodevopsacr"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  resource_group_name = data.azurerm_resource_group.existing_rg.name
+  location            = data.azurerm_resource_group.existing_rg.location
   sku                 = "Basic"
   admin_enabled       = true
 }
@@ -22,8 +20,8 @@ resource "azurerm_container_registry" "acr" {
 #-------------------------
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = "devops-aks"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = data.azurerm_resource_group.existing_rg.location
+  resource_group_name = data.azurerm_resource_group.existing_rg.name
   dns_prefix          = "devopsaks"
 
   default_node_pool {
