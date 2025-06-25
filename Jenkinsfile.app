@@ -6,14 +6,15 @@ pipeline {
   }
 
   environment {
-    ACR_NAME = 'izieomodevopsacr'
-    IMAGE_TAG = 'latest'
-    RESOURCE_GROUP = 'devops-rg'
-    CLUSTER_NAME = 'devops-aks'
+    ACR_NAME        = 'izieomodevopsacr'
+    IMAGE_TAG       = 'latest'
+    RESOURCE_GROUP  = 'devops-rg'
+    CLUSTER_NAME    = 'devops-aks'
 
     AZ_CLIENT_ID     = credentials('AZURE_CLIENT_ID')
     AZ_CLIENT_SECRET = credentials('AZURE_CLIENT_SECRET')
     AZ_TENANT_ID     = credentials('AZURE_TENANT_ID')
+    AZ_SUBSCRIPTION_ID = credentials('AZURE_SUBSCRIPTION_ID') // Needed for backend auth
   }
 
   stages {
@@ -50,25 +51,34 @@ pipeline {
 
     stage('Set Up kubeconfig') {
       steps {
-        script {
-          sh '''
-        terraform init -input=false
-        terraform output -raw kube_config > azurek8s
-        export KUBECONFIG=$PWD/azurek8s
-        echo "[INFO] KUBECONFIG preview:"
-        head -n 10 azurek8s
-        kubectl config current-context
-          '''
+        dir('terraform') {
+          withEnv([
+            "ARM_CLIENT_ID=${AZ_CLIENT_ID}",
+            "ARM_CLIENT_SECRET=${AZ_CLIENT_SECRET}",
+            "ARM_SUBSCRIPTION_ID=${AZ_SUBSCRIPTION_ID}",
+            "ARM_TENANT_ID=${AZ_TENANT_ID}"
+          ]) {
+            sh '''
+              terraform init -input=false
+              terraform output -raw kube_config > azurek8s
+              export KUBECONFIG=$PWD/azurek8s
+              echo "[INFO] KUBECONFIG preview:"
+              head -n 10 azurek8s
+              kubectl config current-context
+            '''
+          }
         }
       }
     }
 
     stage('Deploy to AKS') {
       steps {
-        sh '''
-          export KUBECONFIG=$PWD/azurek8s
-          kubectl apply -f k8s/
-        '''
+        dir('terraform') {
+          sh '''
+            export KUBECONFIG=$PWD/azurek8s
+            kubectl apply -f ../k8s/
+          '''
+        }
       }
     }
   }
