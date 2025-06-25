@@ -52,6 +52,7 @@ pipeline {
       steps {
         script {
           sh '''
+        terraform init -input=false
         terraform output -raw kube_config > azurek8s
         export KUBECONFIG=$PWD/azurek8s
         echo "[INFO] KUBECONFIG preview:"
