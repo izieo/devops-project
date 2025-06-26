@@ -35,19 +35,26 @@ pipeline {
     }
 
   stage('Build & Push Docker Images') {
-      steps {
-        script {
-          def services = ['frontend', 'adservice', 'checkoutservice']
-          for (svc in services) {
-            def image = "${ACR_NAME}.azurecr.io/${svc}:${IMAGE_TAG}"
-            sh """
-              docker build -t ${image} ./microservices/${svc}
-              docker push ${image}
-            """
-          }
-        }
+  steps {
+    script {
+      def services = ['frontend', 'adservice', 'checkoutservice']
+      
+      // Create buildx builder if it doesn't exist
+      sh 'docker buildx create --use || true'
+
+      for (svc in services) {
+        def image = "${ACR_NAME}.azurecr.io/${svc}:${IMAGE_TAG}"
+        sh """
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${image} \
+            --push \
+            ./microservices/${svc}
+        """
       }
     }
+  }
+}
 
     stage('Set Up kubeconfig') {
       steps {
